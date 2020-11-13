@@ -8,7 +8,7 @@ import WireMessage from './WireMessage';
 import PublishMessage from './PublishMessage';
 import ConnectMessage from './ConnectMessage';
 
-import RNReactNativeZlib from 'react-native-zlib';
+import RNReactNativeZlib from '@klarna/react-native-zlib';
 
 type ConnectOptions = {
   timeout?: number,
