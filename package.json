@@ -19,7 +19,7 @@
   "repository": "rh389/react-native-paho-mqtt",
   "dependencies": {
     "events": "^1.1.1",
-    "@klarna/react-native-zlib": "git://github.com/fl-eric/react-native-zlib.git#b8a1a1e3157928506851c4530d841bb43e0b475b"
+    "@klarna/react-native-zlib": "git://github.com/fl-eric/react-native-zlib.git#e16689449299d51c6552a1ccd49872ba7c5616cc"
   },
   "devDependencies": {
     "babel": "^6.5.2",
