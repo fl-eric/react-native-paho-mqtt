@@ -27,6 +27,14 @@ export default class {
     // Compute the first byte of the fixed header
     const first = ((MESSAGE_TYPE.CONNECT & 0x0f) << 4);
 
+    // PATCH:
+    const extraFlagsOffset = 0;
+    const downstreamCompressionOffset = 0x07;
+
+    // const enableDownstreamCompression = options.downstreamCompression;
+    const enableDownstreamCompression = true;
+    const hasExtraFlags = enableDownstreamCompression;
+
     /*
      * Now calculate the length of the variable header + payload by adding up the lengths
      * of all the component parts
@@ -60,6 +68,11 @@ export default class {
       if (options.password) {
         remLength += lengthOfUTF8(options.password) + 2;
       }
+    }
+
+    // PATCH: Extra flags
+    if (hasExtraFlags) {
+      remLength += 1
     }
 
     // Now we can allocate a buffer for the message
@@ -100,7 +113,20 @@ export default class {
     if (options.password) {
       connectFlags |= 0x40;
     }
+
+    // PATCH: extra flags flag
+    connectFlags |= hasExtraFlags ? (1 << extraFlagsOffset) : 0x00;
+
     byteStream[pos++] = connectFlags;
+
+    // PATCH: Extra Flags
+    if (hasExtraFlags) {
+      let extraFlags = 0;
+      extraFlags |= enableDownstreamCompression ? (1 << downstreamCompressionOffset) : 0x00;
+
+      byteStream[pos++] = extraFlags;
+    }
+
     pos = writeUint16(options.keepAliveInterval, byteStream, pos);
 
     pos = writeString(options.clientId, lengthOfUTF8(options.clientId), byteStream, pos);

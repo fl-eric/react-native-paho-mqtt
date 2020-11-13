@@ -103,6 +103,12 @@ export default class Client extends EventEmitter {
     this._client.onMessageArrived = (message) => this.emit('messageReceived', message);
 
     /**
+     * @event Client#batchReceived
+     * @type {Message}
+     */
+    this._client.onBatchArrived = (message, innerMessages) => this.emit('batchReceived', message, innerMessages);
+
+    /**
      * @event Client#connectionLost
      * @type {Error}
      */

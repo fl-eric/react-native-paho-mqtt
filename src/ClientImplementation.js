@@ -8,6 +8,8 @@ import WireMessage from './WireMessage';
 import PublishMessage from './PublishMessage';
 import ConnectMessage from './ConnectMessage';
 
+import RNReactNativeZlib from 'react-native-zlib';
+
 type ConnectOptions = {
   timeout?: number,
   mqttVersion: 3 | 4,
@@ -43,6 +45,10 @@ class ClientImplementation {
   onConnectionLost: ?Function;
   onMessageDelivered: ?Function;
   onMessageArrived: ?Function;
+
+  // PATCH:
+  onBatchArrived: ?Function;
+
   traceFunction: ?Function;
   _msg_queue = null;
   _connectTimeout: ?number;
@@ -668,6 +674,12 @@ class ClientImplementation {
         this.store('Received:', wireMessage);
         this._scheduleMessage(new WireMessage(MESSAGE_TYPE.PUBREC, { messageIdentifier }));
         break;
+      
+
+      case 3:
+        invariant(messageIdentifier, format(ERROR.INVALID_STATE, ['QoS 3 WireMessage with no messageIdentifier']));
+        this._receiveBatch(messageIdentifier, wireMessage);
+        break;
 
       default:
         throw Error('Invaild qos=' + payloadMessage.qos);
@@ -679,6 +691,58 @@ class ClientImplementation {
     if (this.onMessageArrived) {
       this.onMessageArrived(wireMessage.payloadMessage);
     }
+  }
+
+  /** @ignore */
+  _receiveBatch(messageIdentifier: number, wireMessage: PublishMessage) {
+    if (this.onBatchArrived) {
+      this._expandQoS3Payload(wireMessage.payloadMessage.payloadBytes).then(innerPackets => {
+        this.onBatchArrived(wireMessage.payloadMessage, innerPackets);
+        this._scheduleMessage(new WireMessage(MESSAGE_TYPE.PUBACK, { messageIdentifier }));
+      });
+    }
+  }
+
+  /** @ignore */
+  _expandQoS3Payload (payload: Uint8Array) {
+    const data = Array.from(payload);
+
+    return new Promise((resolve, reject) => {
+
+      RNReactNativeZlib.inflateGzip(data).then(decompressed => {
+        try {
+          let offset = 0;
+          let messages: (WireMessage | PublishMessage)[] = [];
+
+          while (offset < byteArray.length) {
+            const result = decodeMessage(byteArray, offset);
+            const wireMessage = result[0];
+            offset = result[1];
+            
+            if (wireMessage) {
+              messages.push(wireMessage);
+            } else {
+              break;
+            }
+          }
+
+          if (offset < byteArray.length) {
+            this._disconnected(ERROR.INTERNAL_ERROR.code, format(ERROR.INTERNAL_ERROR, ['could not decompress all messages', '']));
+            reject('Could not decompress all messages');
+          } else {
+            resolve(messages);
+          }
+
+        } catch (error) {
+          this._disconnected(ERROR.INTERNAL_ERROR.code, format(ERROR.INTERNAL_ERROR, [error.message, error.stack.toString()]));
+          reject('Error decoding compressed messages: ' + error.message);
+        }
+
+      })
+      .catch(function(error) {
+        console.log('Could not inflate data: ' + error.message);
+      });
+    });
   }
 
   /**

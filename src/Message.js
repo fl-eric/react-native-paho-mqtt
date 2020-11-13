@@ -42,7 +42,7 @@ type Payload = string | Uint8Array;
 export default class {
   _payload: Payload;
   _destinationName: string;
-  _qos: 0 | 1 | 2 = 0;
+  _qos: 0 | 1 | 2 | 3 = 0;
   _retained: boolean = false;
   _duplicate: boolean = false;
 
@@ -88,15 +88,15 @@ export default class {
     }
   }
 
-  get qos(): 0 | 1 | 2 {
+  get qos(): 0 | 1 | 2 | 3 {
     return this._qos;
   }
 
-  set qos(newQos: 0 | 1 | 2) {
-    if (newQos === 0 || newQos === 1 || newQos === 2) {
+  set qos(newQos: 0 | 1 | 2 | 3) {
+    if (newQos === 0 || newQos === 1 || newQos === 2 || newQos === 3) {
       this._qos = newQos;
     } else {
-      throw new Error('Invalid argument:' + newQos);
+      throw new Error('Invalid argument: QOS ' + newQos);
     }
   }
 
