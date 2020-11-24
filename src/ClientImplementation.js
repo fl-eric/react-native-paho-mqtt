@@ -714,8 +714,8 @@ class ClientImplementation {
           let offset = 0;
           let messages: (WireMessage | PublishMessage)[] = [];
 
-          while (offset < byteArray.length) {
-            const result = decodeMessage(byteArray, offset);
+          while (offset < decompressed.length) {
+            const result = decodeMessage(decompressed, offset);
             const wireMessage = result[0];
             offset = result[1];
             
@@ -726,7 +726,7 @@ class ClientImplementation {
             }
           }
 
-          if (offset < byteArray.length) {
+          if (offset < decompressed.length) {
             this._disconnected(ERROR.INTERNAL_ERROR.code, format(ERROR.INTERNAL_ERROR, ['could not decompress all messages', '']));
             reject('Could not decompress all messages');
           } else {
