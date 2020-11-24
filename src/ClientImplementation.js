@@ -713,20 +713,21 @@ class ClientImplementation {
         try {
           let offset = 0;
           let messages: (WireMessage | PublishMessage)[] = [];
+          const byteArray = new Uint8Array(decompressed);
 
-          while (offset < decompressed.length) {
-            const result = decodeMessage(decompressed, offset);
+          while (offset < byteArray.length) {
+            const result = decodeMessage(byteArray, offset);
             const wireMessage = result[0];
             offset = result[1];
             
             if (wireMessage) {
-              messages.push(wireMessage);
+              messages.push(wireMessage.payloadMessage);
             } else {
               break;
             }
           }
 
-          if (offset < decompressed.length) {
+          if (offset < byteArray.length) {
             this._disconnected(ERROR.INTERNAL_ERROR.code, format(ERROR.INTERNAL_ERROR, ['could not decompress all messages', '']));
             reject('Could not decompress all messages');
           } else {
